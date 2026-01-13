@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bitàcola Policial - Agent 1009</title>
+    <style>
+        :root { --primary: #1e3c72; --secondary: #2a5298; --accent: #ffcc00; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
+        .app-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: var(--primary); font-size: 20px; text-align: center; margin-bottom: 20px; }
+        
+        .control-group { margin-bottom: 15px; }
+        textarea { width: 100%; border-radius: 8px; border: 1px solid #ccc; padding: 10px; font-size: 16px; min-height: 80px; }
+        
+        button { 
+            width: 100%; padding: 12px; border: none; border-radius: 8px; 
+            font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 15px;
+        }
+        .btn-record { background: #d9534f; color: white; }
+        .btn-add { background: #5cb85c; color: white; }
+        .btn-copy { background: var(--primary); color: white; }
+        .btn-clear { background: #777; color: white; margin-top: 20px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #eee; }
+        .status { text-align: center; color: #666; font-size: 12px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <h1>🚔 Bitàcola Agent 1009</h1>
+    
+    <div class="control-group">
+        <button id="recordBtn" class="btn-record">🎤 Dictar Actuació</button>
+        <textarea id="inputText" placeholder="Descripció de l'actuació..."></textarea>
+    </div>
+
+    <button id="addBtn" class="btn-add">➕ Afegir a la Bitàcola</button>
+    <button id="copyBtn" class="btn-copy">📋 Copiar per al DRAG</button>
+
+    <div id="status" class="status">Prement 'Afegir' es desa al mòbil</div>
+
+    <table id="logTable">
+        <thead>
+            <tr>
+                <th>Hora</th>
+                <th>Actuació</th>
+                <th>Acció</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <button id="clearBtn" class="btn-clear">🗑️ Esborrar Tot el Torn</button>
+</div>
+
+<script>
+    let registros = JSON.parse(localStorage.getItem('bitacora_1009')) || [];
+    const inputText = document.getElementById('inputText');
+    const tableBody = document.getElementById('tableBody');
+
+    // --- RECONOCIMIENTO DE VOZ ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ca-ES'; 
+        
+        document.getElementById('recordBtn').onclick = () => {
+            recognition.start();
+            document.getElementById('status').innerText = "Escoltant...";
+        };
+
+        recognition.onresult = (event) => {
+            inputText.value = event.results[0][0].transcript;
+            document.getElementById('status').innerText = "Dictat completat";
+        };
+    }
+
+    // --- LÓGICA DE LA APP ---
+    function renderTable() {
+        tableBody.innerHTML = '';
+        registros.forEach((reg, index) => {
+            const row = `<tr>
+                <td>${reg.hora}</td>
+                <td>${reg.texto}</td>
+                <td><button onclick="deleteReg(${index})" style="background:none; border:none; color:red;">❌</button></td>
+            </tr>`;
+            tableBody.innerHTML += row;
+        });
+        localStorage.setItem('bitacora_1009', JSON.stringify(registros));
+    }
+
+    document.getElementById('addBtn').onclick = () => {
+        if (!inputText.value) return;
+        const ahora = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        registros.push({ hora: ahora, texto: inputText.value });
+        inputText.value = '';
+        renderTable();
+    };
+
+    function deleteReg(index) {
+        registros.splice(index, 1);
+        renderTable();
+    }
+
+    document.getElementById('clearBtn').onclick = () => {
+        if (confirm("Vols esborrar tota la bitàcola del torn?")) {
+            registros = [];
+            renderTable();
+        }
+    };
+
+    // --- COPIAR PARA EL DRAG (EXTENSIVO) ---
+    document.getElementById('copyBtn').onclick = () => {
+        let informe = "RESUM D'ACTUACIONS - AGENT 1009\n\n";
+        registros.forEach(reg => {
+            informe += `🕒 ${reg.hora} h - ACTUACIÓ POLICIAL:\n`;
+            informe += `Detall: ${reg.texto}\n`;
+            informe += `Estat: Finalitzat sense incidències ressenyables.\n`;
+            informe += `---------------------------\n`;
+        });
+        
+        navigator.clipboard.writeText(informe).then(() => {
+            alert("Informe copiat al porta-papers. Ja pots enganxar-lo al DRAG.");
+        });
+    };
+
+    // Inicializar
+    renderTable();
+</script>
+
+</body>
+</html>
