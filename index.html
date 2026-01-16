@@ -518,6 +518,7 @@ RESPON NOMÉS AMB LA VERSIÓ TÈCNICA EN CATALÀ.`;
 
         const response = await fetch(proxyUrl, {
             method: 'POST',
+            mode: 'cors',  // AÑADIR ESTO
             headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': CLAUDE_KEY,
@@ -689,6 +690,7 @@ RESPON NOMÉS AMB LA VERSIÓ TÈCNICA EN CATALÀ.`;
     </script>
 </body>
 </html>
+
 
 
 
